@@ -1,0 +1,252 @@
+1a) Study on Virtualization Types and Tools
+Aim: Study virtualization, its types, and associated tools.
+Steps:
+
+Understand virtualization: Creating a virtual version of a server, desktop, storage, OS, or network resources.
+Study Hardware Virtualization:
+Full Virtualization (guest OS unmodified) → Tools: Oracle VirtualBox, VMware Workstation/ESXi, Microsoft Hyper-V, KVM+QEMU.
+Para-Virtualization (guest OS modified) → Tools: Xen, older VMware, KVM.
+Type 1 (Bare-metal) Hypervisors → VMware ESXi, Hyper-V, Xen, KVM.
+Type 2 (Hosted) Hypervisors → VirtualBox, VMware Workstation, Parallels.
+
+Study OS Virtualization (containers sharing kernel) → Tools: Docker, LXC/LXD, Podman, Containerd.
+Study Server Virtualization → Tools: VMware ESXi, Proxmox, Hyper-V, XenServer, KVM.
+Study Storage Virtualization → Tools: VMware vSAN, IBM Spectrum, Ceph, OpenFiler.
+Study Network Virtualization → Tools: VMware NSX, Open vSwitch, Cisco ACI, GNS3.
+Study Desktop Virtualization → Tools: Citrix, VMware Horizon, Microsoft RDS.
+Study Application Virtualization → Tools: Microsoft App-V, Docker, Turbo.net.
+Note the result: Study completed successfully.
+
+1b) Review of Linux Commands
+Aim: Study and execute basic Linux commands inside a VirtualBox VM.
+Steps:
+
+Start Ubuntu (or any Linux) VM in Oracle VirtualBox.
+Open terminal and practice:
+ls – list files/directories
+cd – change directory
+pwd – print working directory
+mkdir – create directory
+rm / rm -r – delete file/directory
+cp – copy files
+mv – move/rename
+touch – create empty file
+cat – display file content
+nano – edit file
+grep – search pattern
+ps aux – list processes
+top – real-time resource usage
+kill <PID> – terminate process
+df -h – disk free space
+du -sh – directory size
+
+Verify each command works and note the output.
+Note the result: Commands studied and executed successfully.
+
+2a) Creating a VM and Adding Storage, Memory, and Network
+Aim: Create a VM and configure storage, memory, and network in Oracle VirtualBox.
+Steps:
+
+Open Oracle VM VirtualBox Manager → Click New.
+Enter Name (e.g., KESHO_2A), Type: Linux, Version: Ubuntu (64-bit) → Next.
+Allocate Memory (e.g., 4 GB; do not exceed 50% of host RAM) → Next.
+Create a new virtual hard disk → Dynamically allocated → Size (e.g., 20 GB) → Create.
+Go to Settings → Network → Adapter 1: Enable → Attached to: Bridged Adapter (or Host-Only) → OK.
+(Optional) Install Ubuntu ISO and complete OS installation.
+(Optional performance test) Write a Java program to sum digits, run on both host (Windows) and guest (Ubuntu), compare execution times.
+Note the result: VM created and configured successfully.
+
+2b) VM–VM Ping and VM–Native Ping
+Aim: Check connectivity between VMs and between VM and host using ping.
+Steps:
+
+Set both VMs’ network adapters to Host-Only Adapter (same network, e.g., vboxnet0).
+Power on both VMs. Find IPs:
+In Linux: ip a or ifconfig
+In Windows host: ipconfig
+
+Disable firewalls:
+Linux: sudo ufw disable (or sudo iptables -F)
+Windows: Enable “File and Printer Sharing (Echo Request – ICMPv4-In)” in Windows Firewall.
+
+Test VM–Native:
+From VM → Host: ping <host_IP>
+From Host → VM: ping <VM_IP>
+
+Test VM–VM:
+From Ubuntu → Kali: ping <Kali_IP>
+From Kali → Ubuntu: ping <Ubuntu_IP>
+
+Confirm successful replies (no packet loss).
+Note the result: Connectivity verified successfully.
+
+3) Cold Migration of VM from One Host to Another
+Aim: Perform cold migration (powered-off VM) using OVA export/import.
+Steps:
+
+Create a test file inside the VM (e.g., a Java file) to verify later.
+Shut down the VM completely.
+In VirtualBox: Select VM → File → Export Appliance.
+Choose the VM, select OVA format, choose destination path → Export.
+Copy the .ova file to the destination host (USB, network, etc.).
+On destination host: File → Import Appliance → Browse to the .ova → Import.
+Start the imported VM and verify the test file still exists (cat kesho.java or similar).
+Note the result: Cold migration completed successfully; data and configuration retained.
+
+4a & 4b) Installation of Citrix XenServer + Live Migration using XenCenter
+Aim: Install XenServer and perform live migration of a running VM using XenCenter.
+Steps (Installation – 4a):
+
+Download XenServer ISO from Citrix.
+Create bootable USB (Rufus/Ventoy).
+Enable VT-x/AMD-V in BIOS; set USB as first boot device.
+Boot and install: Select disk, configure network (prefer static IP), set root password, install tools.
+Reboot; note the console IP address.
+
+Steps (Live Migration – 4b):
+
+Install XenCenter on a Windows machine.
+Add first XenServer (Server → Add → enter IP, username, password).
+Create a new VM: Right-click server → New VM → Choose template → Name → Select ISO → Create.
+Install a second XenServer the same way and add it to XenCenter.
+Ensure shared storage is available (required for live migration).
+Right-click the running VM → Move VM → Select the second XenServer → Finish.
+Observe the VM appear on the second server with zero downtime.
+Note the result: XenServer + live migration completed successfully.
+
+5a) Installation of KVM and Creation of Virtual Instances
+Aim: Install KVM and create virtual machines using virt-manager.
+Steps:
+
+Check hardware virtualization: egrep -c '(vmx|svm)' /proc/cpuinfo (should be ≥ 1).
+Install packages:
+sudo apt update
+sudo apt install qemu-kvm libvirt-daemon-system libvirt-clients bridge-utils virt-manager
+Add user to groups: sudo adduser $USER libvirt and sudo adduser $USER kvm. Log out/in.
+Start and enable libvirtd: sudo systemctl enable --now libvirtd.
+Open virt-manager → Right-click QEMU/KVM → New.
+Choose “Import existing disk image” (or Local install media).
+Download Cirros image → Give path → Set memory/CPU → Name VM → Finish.
+Start VM and log in (Cirros default credentials).
+Verify with virsh list.
+Note the result: KVM installed and VM created successfully.
+
+5b) KVM – Create Images from ISO, Resize, Convert
+Aim: Create VM from ISO, resize disk image, convert formats.
+Steps (Create from ISO):
+
+In virt-manager → New → Local install media (ISO).
+Select Ubuntu Server ISO → Set memory/CPU → Create disk (or use qemu-img create -f qcow2 ubuntu_vm.qcow2 10G).
+Complete Ubuntu installation inside the VM.
+
+Steps (Resize):
+
+Shut down the VM.
+Resize image: qemu-img resize ubuntu_vm.qcow2 +5G (example).
+Boot VM → Resize partition:
+sudo growpart /dev/sda 1
+sudo resize2fs /dev/sda1
+
+Steps (Convert):
+
+Convert formats with qemu-img:
+qemu-img convert -f qcow2 -O vdi ubuntu_vm.qcow2 ubuntu_vm.vdi
+qemu-img convert -f qcow2 -O vpc ubuntu_vm.qcow2 ubuntu_vm.vhd
+qemu-img convert -f qcow2 -O raw ubuntu_vm.qcow2 ubuntu_vm.img
+
+Note the result: Image creation, resizing, and conversion completed successfully.
+
+6) Transfer of Files from One Virtual Machine to Another
+Aim: Transfer files between Ubuntu and Kali VMs using multiple methods.
+Method 1 – NFS:
+
+Set both VMs to Host-Only Adapter (same subnet) + NAT (for package install).
+On Ubuntu (server):
+sudo apt install nfs-kernel-server -y
+sudo mkdir -p /srv/nfs/sharedfolder
+sudo chown nobody:nogroup /srv/nfs/sharedfolder
+sudo chmod 777 /srv/nfs/sharedfolder
+Edit /etc/exports: add /srv/nfs/sharedfolder <Kali_IP>(rw,sync,no_subtree_check,no_root_squash)
+sudo exportfs -a && sudo systemctl restart nfs-kernel-server
+On Kali (client):
+sudo apt install nfs-common -y
+sudo mkdir -p /mnt/nfs/sharedfolder
+sudo mount <Ubuntu_IP>:/srv/nfs/sharedfolder /mnt/nfs/sharedfolder
+Test read/write from both sides.
+
+Method 2 – VirtualBox Shared Folders:
+
+Create folder on host (e.g., C:\VMShared).
+For each VM: Settings → Shared Folders → Add → Path, Name, Auto-mount.
+Install Guest Additions inside each VM.
+Access at /media/sf_VMShared.
+Fix permissions: sudo usermod -aG vboxsf $USER → reboot.
+
+Method 3 – SSH/SCP:
+
+Install: sudo apt install openssh-server -y on both.
+From client: ssh user@server_IP
+scp file.txt user@server_IP:/home/user/
+
+Method 4 – FTP (vsftpd):
+
+On server: sudo apt install vsftpd -y → edit /etc/vsftpd.conf (enable local/write) → restart.
+On client: ftp server_IP → use get/put.
+
+Result: All methods work; files can be read and written between VMs.
+7a) Configuration of Hyper-V on Windows
+Aim: Enable Hyper-V role on Windows Server/Client.
+Steps:
+
+Open Server Manager → Add Roles and Features.
+Role-based installation → Select server → Next.
+Check Hyper-V → Add Features.
+Configure virtual switches (Ethernet + any Host-Only if needed).
+Choose migration authentication (CredSSP).
+Install → Reboot if required.
+Open Hyper-V Manager from Tools.
+Note the result: Hyper-V configured successfully.
+
+7b) Creation of VM, PowerShell Commands, Management
+Aim: Create and manage VMs with GUI and PowerShell.
+GUI Steps:
+
+Hyper-V Manager → Right-click server → New → Virtual Machine.
+Name + location → Assign memory (e.g., 2 GB) → Connect virtual switch → Create VHD → Attach ISO → Finish.
+Start VM and install OS.
+
+PowerShell Examples:
+
+Create VM: New-VM -Name "MyVM" -MemoryStartupBytes 2GB -NewVHDPath "C:\VMs\MyVM.vhdx" -NewVHDSizeBytes 40GB
+Add switch: Connect-VMNetworkAdapter -VMName "MyVM" -SwitchName "ExternalSwitch"
+Start: Start-VM -Name "MyVM"
+Stop: Stop-VM -Name "MyVM"
+List: Get-VM
+Migrate: Right-click VM → Move → Follow wizard.
+
+Result: VM creation and management (GUI + PowerShell) completed successfully.
+8) Installation of OpenStack and Creation of Virtual Machines
+Aim: Install OpenStack (DevStack) and launch a VM.
+Steps:
+
+sudo apt update
+Install required packages for building OpenStack.
+Create user stack, give sudo privileges, add to groups.
+Set passwordless sudo for stack user.
+Switch to stack user: sudo su - stack
+Clone DevStack: git clone https://opendev.org/openstack/devstack
+cd devstack
+Create/edit local.conf and set passwords (ADMIN_PASSWORD, DATABASE_PASSWORD, etc.).
+Run: ./stack.sh (takes a long time).
+After success, note the Horizon IP shown.
+Browse to the IP → Login with admin credentials from local.conf.
+Create VM via CLI:
+source openrc admin admin
+openstack image list / openstack flavor list
+openstack keypair create mykey > mykey.pem → chmod 600 mykey.pem
+openstack network list
+openstack server create --image <image> --flavor <flavor> --nic net-id=<net_id> --key-name mykey my-first-vm
+openstack server list
+SSH: ssh -i mykey.pem cirros@<VM_IP>
+
+Note the result: OpenStack installed and VM created successfully.
